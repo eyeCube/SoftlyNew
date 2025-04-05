@@ -52,16 +52,23 @@ def new_game() -> Engine:
     )
 
     dagger = copy.deepcopy(entity_factories.weapons[CLASS_DAGGERS][MAT_METAL])
-    leather_armor = copy.deepcopy(entity_factories.leather_armor)
-
     dagger.parent = player.inventory
-    leather_armor.parent = player.inventory
-
     player.inventory.items.append(dagger)
     player.equipment.toggle_equip(dagger, add_message=False)
-
+    
+    leather_armor = copy.deepcopy(entity_factories.leather_armor)
+    leather_armor.parent = player.inventory
     player.inventory.items.append(leather_armor)
     player.equipment.toggle_equip(leather_armor, add_message=False)
+    
+    torch = copy.deepcopy(entity_factories.torch)
+    torch.parent = player.inventory
+    player.inventory.items.append(torch)
+    player.equipment.toggle_equip(torch, add_message=False, offhand=True)
+
+    player.fighter.hp = player.fighter.max_hp
+    
+    engine.update_fov()
 
     return engine
 

@@ -25,7 +25,13 @@ class GameMap:
             # tiles_memory: what the player remembers seeing / what is currently displayed
         self.tiles_memory = np.full((width, height), fill_value=tile_types.white_wall, order="F")
         
-        self.visible = np.full(  # Tiles the player can currently see
+        self.lit_tiles = np.full(  # Tiles lit up by light sources
+            (width, height), fill_value=False, order="F"
+        )
+        self.lit_and_visible = np.full(  # Tiles the player can currently see
+            (width, height), fill_value=False, order="F"
+        )
+        self.visible = np.full(  # Tiles the player can currently see but are not illuminated
             (width, height), fill_value=False, order="F"
         )
         self.explored = np.full(  # Tiles the player has seen before
@@ -96,6 +102,17 @@ class GameMap:
         """Return True if x and y are inside of the bounds of this map."""
         return 0 <= x < self.width and 0 <= y < self.height
 
+    def get_lit_and_visible(self):
+        self.lit_and_visible = np.logical_and(self.visible, self.lit_tiles)
+        return self.lit_and_visible
+    def add_explored(self):
+        if self.engine.player.fighter.light >= 1:
+            self.explored |= self.visible
+    def remove_all_light(self):
+        self.lit_tiles = np.full(  # Tiles that are in the light
+            (self.width, self.height), fill_value=False, order="F"
+            )
+
     def render(self, console: Console) -> None:
         """
         Renders the map.
@@ -108,8 +125,8 @@ class GameMap:
         self.tiles_memory = np.where(self.visible, self.tiles, self.tiles_memory)
         
         console.rgb[0 : self.width, 0 : self.height] = np.select(
-            condlist=[self.visible, self.explored],
-            choicelist=[self.tiles_memory["light"], self.tiles_memory["dark"]],
+            condlist=[self.lit_and_visible, self.visible, self.explored],
+            choicelist=[self.tiles_memory["light"], self.tiles_memory["deep"], self.tiles_memory["dark"]],
             default=tile_types.SHROUD,
         )
 
@@ -118,9 +135,13 @@ class GameMap:
         )
 
         for entity in entities_sorted_for_rendering:
-            if self.visible[entity.x, entity.y]:
+            if self.lit_and_visible[entity.x, entity.y]:
                 console.print(
                     x=entity.x, y=entity.y, string=entity.char, fg=entity.color
+                )
+            elif self.visible[entity.x, entity.y]:
+                console.print(
+                    x=entity.x, y=entity.y, string='?', fg=(128,128,128)
                 )
 
 
@@ -138,7 +159,7 @@ class GameWorld:
         max_rooms: int,
         room_min_size: int,
         room_max_size: int,
-        current_floor: int = 0
+        current_floor: int = 1
     ):
         self.engine = engine
 
@@ -154,8 +175,6 @@ class GameWorld:
 
     def generate_floor(self) -> None:
         from procgen import generate_dungeon
-
-        self.current_floor += 1
 
         self.engine.game_map = generate_dungeon(
             max_rooms=self.max_rooms,

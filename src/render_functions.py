@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Tuple, TYPE_CHECKING
+import math
 
 import color
 
@@ -11,14 +12,31 @@ if TYPE_CHECKING:
 
 
 def get_names_at_location(x: int, y: int, game_map: GameMap) -> str:
-    if not game_map.in_bounds(x, y) or not game_map.visible[x, y]:
+    if not game_map.in_bounds(x, y):
         return ""
+
+    if not game_map.visible[x, y]:
+        return "<out of sight>"
+
+    if not game_map.lit_tiles[x, y]:
+        return "<obscured but visible>"
 
     names = ", ".join(
         entity.name for entity in game_map.entities if entity.x == x and entity.y == y
     )
 
     return names.capitalize()
+def render_names_at_mouse_location(
+    console: Console, x: int, y: int, engine: Engine
+) -> None:
+    mouse_x, mouse_y = engine.mouse_location
+
+    names_at_mouse_location = get_names_at_location(
+        x=mouse_x, y=mouse_y, game_map=engine.game_map
+    )
+
+    d = round(math.sqrt((mouse_x-engine.player.x)**2 + (mouse_y-engine.player.y)**2))
+    console.print(x=x, y=y, string=f"D {d}m: {names_at_mouse_location}")
 
 
 def render_bar(
@@ -48,14 +66,3 @@ def render_dungeon_level(
 
     console.print(x=x, y=y, string=f"Dungeon level: {dungeon_level}")
 
-
-def render_names_at_mouse_location(
-    console: Console, x: int, y: int, engine: Engine
-) -> None:
-    mouse_x, mouse_y = engine.mouse_location
-
-    names_at_mouse_location = get_names_at_location(
-        x=mouse_x, y=mouse_y, game_map=engine.game_map
-    )
-
-    console.print(x=x, y=y, string=names_at_mouse_location)

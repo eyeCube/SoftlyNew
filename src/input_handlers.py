@@ -6,6 +6,7 @@ from typing import Callable, Optional, Tuple, TYPE_CHECKING, Union
 
 import tcod
 
+from const import *
 import actions
 from actions import (
     Action,
@@ -147,7 +148,7 @@ class EventHandler(BaseEventHandler):
             self.engine.message_log.add_message(exc.args[0], color.impossible)
             return False  # Skip enemy turn on exceptions.
 
-        self.engine.handle_enemy_turns()
+        self.engine.handle_ai_turns()
 
         self.engine.update_fov()
         return True
@@ -211,43 +212,62 @@ class CharacterScreenEventHandler(AskUserEventHandler):
             x=x,
             y=y,
             width=width,
-            height=7,
+            height=15,
             title=self.TITLE,
             clear=True,
             fg=(255, 255, 255),
             bg=(0, 0, 0),
         )
+        
+        console.print(
+            x=x + 1, y=y + 1, string=f"{self.engine.player.name}"
+        )
 
         console.print(
-            x=x + 1, y=y + 1, string=f"Level: {self.engine.player.level.current_level}"
+            x=x + 1, y=y + 3, string=f"Lv:   {self.engine.player.level.current_level}"
         )
         console.print(
-            x=x + 1, y=y + 2, string=f"XP: {self.engine.player.level.current_xp}"
+            x=x + 1, y=y + 4, string=f"Xp:   {self.engine.player.level.current_xp}"
         )
         console.print(
             x=x + 1,
-            y=y + 3,
-            string=f"XP for next Level: {self.engine.player.level.experience_to_next_level}",
+            y=y + 5,
+            string=f"Need: {self.engine.player.level.experience_to_next_level}",
         )
 
         console.print(
-            x=x + 1, y=y + 4, string=f"ATK: {self.engine.player.fighter.attack}"
+            x=x + 1, y=y + 7, string=f"mATK: {self.engine.player.fighter.attack}"
         )
         console.print(
-            x=x + 1, y=y + 5, string=f"DMG: {self.engine.player.fighter.power}"
+            x=x + 1, y=y + 8, string=f"mDMG: {self.engine.player.fighter.power}"
         )
         console.print(
-            x=x + 1, y=y + 6, string=f"AV:  {self.engine.player.fighter.defense}"
+            x=x + 1, y=y + 9, string=f"rATK: {self.engine.player.fighter.accuracy}"
         )
         console.print(
-            x=x + 1, y=y + 7, string=f"DR:  {self.engine.player.fighter.dodge}"
+            x=x + 1, y=y + 10, string=f"rDMG: {self.engine.player.fighter.missile_damage}"
+        )
+        console.print(
+            x=x + 1, y=y + 11, string=f"AV:   {self.engine.player.fighter.defense}"
+        )
+        console.print(
+            x=x + 1, y=y + 12, string=f"DR:   {self.engine.player.fighter.dodge}"
         )
 
         console.print(
-            x=x + 1, y=y + 8, string=f"BEA: {self.engine.player.fighter.beauty}"
+            x=x + 1, y=y + 14, string=f"BEAU: {self.engine.player.fighter.beauty}"
         )
         console.print(
-            x=x + 1, y=y + 9, string=f"SCA: {self.engine.player.fighter.scary}"
+            x=x + 1, y=y + 15, string=f"SCRY: {self.engine.player.fighter.scary}"
+        )
+        console.print(
+            x=x + 1, y=y + 16, string=f"COUR: {self.engine.player.fighter.courage}"
+        )
+        console.print(
+            x=x + 1, y=y + 18, string=f"LGT:  {self.engine.player.fighter.light}"
+        )
+        console.print(
+            x=x + 1, y=y + 19, string=f"VIS:  {self.engine.player.fighter.vision}"
         )
 
 
@@ -279,31 +299,38 @@ class LevelUpEventHandler(AskUserEventHandler):
         console.print(
             x=x + 1,
             y=4,
-            string=f"a) Constitution (+20 HP, from {self.engine.player.fighter.max_hp})",
+            string=f"1) Zeal ({self.engine.player.fighter.zeal} +1 => {1 + self.engine.player.fighter.zeal})",
         )
         console.print(
             x=x + 1,
             y=5,
-            string=f"b) Strength (+1 attack, from {self.engine.player.fighter.power})",
+            string=f"2) Guts ({self.engine.player.fighter.guts} +1 => {1 + self.engine.player.fighter.guts})",
         )
         console.print(
             x=x + 1,
             y=6,
-            string=f"c) Agility (+1 defense, from {self.engine.player.fighter.defense})",
+            string=f"3) Tech ({self.engine.player.fighter.tech} +1 => {1 + self.engine.player.fighter.tech})",
+        )
+        console.print(
+            x=x + 1,
+            y=7,
+            string=f"4) Luck ({self.engine.player.fighter.luck} +1 => {1 + self.engine.player.fighter.luck})",
         )
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
         player = self.engine.player
         key = event.sym
-        index = key - tcod.event.KeySym.a
+        index = key - tcod.event.KeySym.N1
 
-        if 0 <= index <= 2:
+        if 0 <= index <= 3:
             if index == 0:
-                player.level.increase_max_hp()
+                player.level.increase_zeal()
             elif index == 1:
-                player.level.increase_power()
+                player.level.increase_guts()
+            elif index == 2:
+                player.level.increase_tech()
             else:
-                player.level.increase_defense()
+                player.level.increase_luck()
         else:
             self.engine.message_log.add_message("Invalid entry.", color.invalid)
 
@@ -370,7 +397,8 @@ class InventoryEventHandler(AskUserEventHandler):
                 item_string = f"({item_key}) {item.name}"
 
                 if is_equipped:
-                    item_string = f"{item_string} (E)"
+                    slot = SLOTS_SHORTHAND[self.engine.player.equipment.get_slot_item_is_equipped_to(item)]
+                    item_string = f"{item_string} ({slot})"
 
                 console.print(x + 1, y + i + 1, item_string)
         else:
@@ -543,7 +571,7 @@ class MainGameEventHandler(EventHandler):
         if key == tcod.event.KeySym.PERIOD and modifier & (
             tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT
         ):
-            return actions.TakeStairsAction(player, True)
+            return actions.TakeStairsDownAction(player, True)
 
         if key in MOVE_KEYS:
             dx, dy = MOVE_KEYS[key]

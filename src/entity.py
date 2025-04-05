@@ -125,7 +125,10 @@ class Actor(Entity):
             render_order=RenderOrder.ACTOR,
         )
 
-        self.ai: Optional[BaseAI] = ai_cls(self)
+        if ai_cls:
+            self.ai: Optional[BaseAI] = ai_cls(self)
+        else:
+            self.ai = None
 
         self.equipment: Equipment = equipment
         self.equipment.parent = self
@@ -143,6 +146,16 @@ class Actor(Entity):
     def is_alive(self) -> bool:
         """Returns True as long as this actor can perform actions."""
         return bool(self.ai)
+
+    def spawn(self: T, gamemap: GameMap, x: int, y: int) -> T:
+        """Spawn a copy of this instance at the given location."""
+        clone = copy.deepcopy(self)
+        clone.fighter.hp = self.fighter.max_hp
+        clone.x = x
+        clone.y = y
+        clone.parent = gamemap
+        gamemap.entities.add(clone)
+        return clone
 
 
 class Item(Entity):

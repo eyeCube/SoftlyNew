@@ -1,4 +1,4 @@
-from components.ai import HostileEnemy
+import components
 from components import consumable, equippable
 from components.equipment import Equipment
 from components.fighter import Fighter
@@ -13,11 +13,11 @@ player = Actor(
     value=99,
     char=chr(ord('@')+256),
     color=(255, 255, 255),
-    name="Player",
+    name="eyeCube",
     title="",
-    ai_cls=HostileEnemy,
+    ai_cls=components.ai.StationaryEntity, # everything actor must have an AI and a fighter, equipment, inventory, level, etc.
     equipment=Equipment(),
-    fighter=Fighter(hp=30, base_defense=0, base_power=2),
+    fighter=Fighter(hp=0, av=0, dmg=0, light=0, vision=32, zeal=7, guts=5+2, tech=5-2, luck=5),
     inventory=Inventory(capacity=26),
     level=Level(level_up_base=200),
 )
@@ -28,9 +28,9 @@ omnibot = Actor(
     color=color.blue,
     name="omnibot",
     title="the ",
-    ai_cls=HostileEnemy,
+    ai_cls=components.ai.HostileEnemy,
     equipment=Equipment(),
-    fighter=Fighter(hp=10, base_defense=0, base_power=3),
+    fighter=Fighter(hp=0, av=0, atk=90, dmg=1, light=1, zeal=2, guts=3, tech=8, luck=5),
     inventory=Inventory(capacity=0),
     level=Level(xp_given=35),
 )
@@ -40,9 +40,9 @@ zetabie = Actor(
     color=color.dkgreen,
     name="zetabie",
     title="the ",
-    ai_cls=HostileEnemy,
+    ai_cls=components.ai.HostileEnemy,
     equipment=Equipment(),
-    fighter=Fighter(hp=16, base_defense=1, base_power=4),
+    fighter=Fighter(hp=0, av=1, atk=110, dmg=2, zeal=5, guts=5, tech=8, luck=5),
     inventory=Inventory(capacity=0),
     level=Level(xp_given=100),
 )
@@ -172,7 +172,7 @@ def initialize_swords():
                 dr = 8 + MAT_DODGE[material],
                 scary  = 1 + MAT_SCARY[material],
                 beauty = 0 + MAT_BEAUTY[material],
-                acc_range = max(1, 4 + MAT_THROW_RANGE[material]),
+                missile_range = max(1, 4 + MAT_THROW_RANGE[material]),
                 reach = 1,
                 twoh = False,
                 )
@@ -194,7 +194,7 @@ def initialize_daggers():
                 dr = 5 + MAT_DODGE[material],
                 scary  = 1 + MAT_SCARY[material],
                 beauty = 0 + MAT_BEAUTY[material],
-                acc_range = max(1, 4 + MAT_THROW_RANGE[material]),
+                missile_range = max(1, 4 + MAT_THROW_RANGE[material]),
                 reach = 1,
                 twoh = False,
                 )
@@ -216,7 +216,7 @@ def initialize_halberds():
                 dr = 3 + MAT_DODGE[material],
                 scary  = 2 + MAT_SCARY[material],
                 beauty = 0 + MAT_BEAUTY[material],
-                acc_range = max(1, 2 + MAT_THROW_RANGE[material]),
+                missile_range = max(1, 2 + MAT_THROW_RANGE[material]),
                 reach = 2,
                 twoh = True,
                 )
@@ -238,7 +238,7 @@ def initialize_axes():
                 dr = 3 + MAT_DODGE[material],
                 scary  = 1 + MAT_SCARY[material],
                 beauty = 0 + MAT_BEAUTY[material],
-                acc_range = max(1, 4 + MAT_THROW_RANGE[material]),
+                missile_range = max(1, 4 + MAT_THROW_RANGE[material]),
                 reach = 1,
                 twoh = False,
                 )
@@ -260,7 +260,7 @@ def initialize_spears():
                 dr = 0 + MAT_DODGE[material],
                 scary  = 1 + MAT_SCARY[material],
                 beauty = 0 + MAT_BEAUTY[material],
-                acc_range = max(1, 6 + MAT_THROW_RANGE[material]),
+                missile_range = max(1, 6 + MAT_THROW_RANGE[material]),
                 reach = 1,
                 twoh = False,
                 )
@@ -270,13 +270,20 @@ def initialize_spears():
 
 
 
+torch = Item(
+    value=2,
+    char="/",
+    color=(136, 160, 24),
+    name="torch",
+    equippable=equippable.MeleeWeapon(light=4, damage=1, attack=10, scary=1, beauty=1, missile_range=5, reach=1, twoh=False),
+)
 
 leather_armor = Item(
     value=2,
     char="[",
     color=(139, 69, 19),
     name="leather armor",
-    equippable=equippable.Armor(av=1),
+    equippable=equippable.Armor(av=1, dr=10),
 )
 
 chain_mail = Item(

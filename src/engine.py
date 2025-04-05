@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import numpy as np
+import color
 import random
 import time
 import lzma
@@ -28,9 +30,17 @@ class Engine:
         self.player = player
         random.seed(time.time())
         self.world_seed = int(random.random()*1000)
-        self.world_location = [40,0] # x, y (y == story progress / how far along the highway you are (how deep in the dungeon)
+        self.world_location = [40,0] # x, y
 
-    def handle_enemy_turns(self) -> None:
+    def descend(self):
+        self.game_world.current_floor += 1
+        self.world_location = [self.world_location[0], self.game_world.current_floor]
+        self.game_world.generate_floor()
+        self.message_log.add_message(
+            "You descend the staircase.", color.descend
+        )
+
+    def handle_ai_turns(self) -> None:
         for entity in set(self.game_map.actors) - {self.player}:
             if entity.ai:
                 try:
@@ -43,15 +53,32 @@ class Engine:
         self.game_map.visible[:] = compute_fov(
             self.game_map.tiles["transparent"],
             (self.player.x, self.player.y),
-            radius=8,
+            radius=int(min(max(self.player.fighter.vision*0.1, self.player.fighter.light*2), self.player.fighter.vision)),
         )
+        x, y = np.indices(self.game_map.visible.shape)
+        distance = np.sqrt((x - self.player.x)**2 + (y - self.player.y)**2)
+        self.game_map.visible = (self.game_map.visible & (distance <= self.player.fighter.vision))
+        self.game_map.remove_all_light()
+        for actor in self.game_map.actors:
+            if actor.fighter.light <= 0:
+                continue
+            lighthere = compute_fov(
+                self.game_map.tiles["transparent"],
+                (actor.x, actor.y),
+                radius=actor.fighter.light,
+            )
+            x, y = np.indices(lighthere.shape)
+            distance = np.sqrt((x - actor.x)**2 + (y - actor.y)**2)
+            lighthere = (lighthere & (distance <= actor.fighter.light))
+            self.game_map.lit_tiles[:] |= lighthere
         # If a tile is "visible" it should be added to "explored".
-        self.game_map.explored |= self.game_map.visible
+        self.game_map.get_lit_and_visible()
+        self.game_map.add_explored()
 
     def render(self, console: Console) -> None:
         self.game_map.render(console)
 
-        self.message_log.render(console=console, x=21, y=45, width=40, height=5)
+        self.message_log.render(console=console, x=21, y=45, width=60, height=5)
 
         render_functions.render_bar(
             console=console,

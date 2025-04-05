@@ -46,6 +46,15 @@ class BaseAI(Action):
         return [(index[0], index[1]) for index in path]
 
 
+class StationaryEntity(BaseAI):
+    def __init__(self, entity: Actor):
+        super().__init__(entity, False)
+        self.path: List[Tuple[int, int]] = []
+
+    def perform(self) -> None:
+        return WaitAction(self.entity, False).perform()
+
+    
 class HostileEnemy(BaseAI):
     def __init__(self, entity: Actor):
         super().__init__(entity, False)

@@ -23,7 +23,12 @@ class Equippable(BaseComponent):
         beauty: int = 0,
         reach: int = 1,
         twoh: bool = False,
-        acc_range: int = 1
+        light: int = 0,
+        vision: int = 0,
+        accuracy: int = 0,
+        missile_range: int = 0,
+        missile_damage: int = 0,
+        is_missile_weapon: bool = False,
     ):
         self.equipment_type = equipment_type
 
@@ -35,11 +40,22 @@ class Equippable(BaseComponent):
         self.beauty = beauty
         self.reach = reach
         self.twoh = twoh
-        self.acc_range = acc_range
-
+        self.vision = vision
+        self.light = light
+        self.accuracy = accuracy
+        self.missile_range = missile_range
+        self.missile_damage = missile_damage
+        self.is_missile_weapon = is_missile_weapon
+        
 
 class MeleeWeapon(Equippable):
-    def __init__(self, damage=1, attack=1, scary=1, beauty=0, twoh=False, reach=1, av=0, dr=0, acc_range=1) -> None:
+    def __init__(self,
+                 damage=1, attack=1,
+                 scary=1, beauty=0,
+                 twoh=False, reach=1,
+                 av=0, dr=0,
+                 is_missile_weapon=False, missile_range=1, missile_damage=0, accuracy=0,
+                 light=0, vision=0) -> None:
         super().__init__(
             equipment_type=EquipmentType.WEAPON,
             av = av,
@@ -50,17 +66,26 @@ class MeleeWeapon(Equippable):
             attack=attack,
             reach=reach,
             twoh=twoh,
-            acc_range=acc_range,
+            missile_range=missile_range,
+            light=light,
+            vision=vision,
+            accuracy=accuracy,
+            missile_damage=missile_damage,
+            is_missile_weapon=is_missile_weapon
             )
 
 
 class Armor(Equippable):
-    def __init__(self, av=1, dr=0, scary=0, beauty=0) -> None:
+    def __init__(self, av=1, dr=0, scary=0, beauty=0, light=0, vision=0, accuracy=0, attack=0) -> None:
         super().__init__(
             equipment_type=EquipmentType.ARMOR,
             av=av,
             dr=dr,
             scary=scary,
-            beauty=beauty
+            beauty=beauty,
+            light=light,
+            vision=vision,
+            accuracy=accuracy,
+            attack=attack,
             )
 

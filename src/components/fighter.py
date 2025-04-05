@@ -13,20 +13,49 @@ if TYPE_CHECKING:
 class Fighter(BaseComponent):
     parent: Actor
 
-    def __init__(self, hp = 1, base_defense = 0, base_power = 1, base_attack = 100, base_dodge = 0, base_beauty = 0, base_scary = 0):
-        self.max_hp = hp
-        self._hp = hp
-        self.base_defense = base_defense
-        self.base_power = base_power
-        self.base_attack = base_attack
-        self.base_dodge = base_dodge
-        self.base_beauty = base_beauty
-        self.base_scary = base_scary
+    def __init__(self,
+                 zeal = 1, guts = 1, tech = 1, luck = 1,
+                 hp = 1, av = 0, dmg = 1, atk = 100, dr = 0,
+                 beauty = 0, scary = 0, light = 0, vision = 20,
+                 acc = 100, missile_damage = 0, courage = 0
+                 ):
+        self._zeal              = zeal
+        self._guts              = guts
+        self._tech              = tech
+        self._luck              = luck
+        self._max_hp            = hp
+        self._hp                = hp
+        self.base_defense       = av
+        self.base_power         = dmg
+        self.base_attack        = atk
+        self.base_dodge         = dr
+        self.base_beauty        = beauty
+        self.base_scary         = scary
+        self.base_light         = light
+        self.base_vision        = vision
+        self.base_accuracy      = acc
+        self.base_missile_damage= missile_damage
+        self.base_courage       = courage
 
+    @property
+    def zeal(self) -> int:
+        return self._zeal
+    @property
+    def guts(self) -> int:
+        return self._guts
+    @property
+    def tech(self) -> int:
+        return self._tech
+    @property
+    def luck(self) -> int:
+        return self._luck
+    
+    @property
+    def max_hp(self) -> int:
+        return self._max_hp + 5*self.zeal
     @property
     def hp(self) -> int:
         return self._hp
-
     @hp.setter
     def hp(self, value: int) -> None:
         self._hp = max(0, min(value, self.max_hp))
@@ -39,6 +68,9 @@ class Fighter(BaseComponent):
     @property
     def scary(self) -> int:
         return self.base_scary + self.scary_bonus
+    @property
+    def courage(self) -> int:
+        return self.base_courage + self.guts
 
     @property
     def defense(self) -> int:
@@ -53,17 +85,31 @@ class Fighter(BaseComponent):
     @property
     def attack(self) -> int:
         return self.base_attack + self.attack_bonus
+    
+    @property
+    def accuracy(self) -> int:
+        return self.base_accuracy + self.accuracy_bonus
+    @property
+    def missile_damage(self) -> int:
+        return self.base_missile_damage + self.missile_damage_bonus
+    
+    @property
+    def light(self) -> int:
+        return self.base_light + self.light_bonus
+    @property
+    def vision(self) -> int:
+        return self.base_vision + self.vision_bonus
 
     @property
     def beauty_bonus(self) -> int:
         if self.parent.equipment:
-            return self.parent.equipment.beauty_bonus
+            return self.parent.equipment.beauty_bonus + self.luck
         else:
             return 0
     @property
     def scary_bonus(self) -> int:
         if self.parent.equipment:
-            return self.parent.equipment.scary_bonus
+            return self.parent.equipment.scary_bonus + self.guts
         else:
             return 0
 
@@ -76,20 +122,46 @@ class Fighter(BaseComponent):
     @property
     def dodge_bonus(self) -> int:
         if self.parent.equipment:
-            return self.parent.equipment.dr_bonus
+            return self.parent.equipment.dr_bonus + 2*self.luck
         else:
             return 0
 
     @property
     def power_bonus(self) -> int:
         if self.parent.equipment:
-            return self.parent.equipment.damage_bonus
+            return self.parent.equipment.damage_bonus + self.guts
         else:
             return 0
     @property
     def attack_bonus(self) -> int:
         if self.parent.equipment:
-            return self.parent.equipment.attack_bonus
+            return self.parent.equipment.attack_bonus + 5*self.guts
+        else:
+            return 0
+        
+    @property
+    def light_bonus(self) -> int:
+        if self.parent.equipment:
+            return self.parent.equipment.light_bonus
+        else:
+            return 0
+    @property
+    def vision_bonus(self) -> int:
+        if self.parent.equipment:
+            return self.parent.equipment.vision_bonus
+        else:
+            return 0
+        
+    @property
+    def accuracy_bonus(self) -> int: # missile / ranged weapon accuracy
+        if self.parent.equipment:
+            return self.parent.equipment.accuracy_bonus + 5*self.luck
+        else:
+            return 0
+    @property
+    def missile_damage_bonus(self) -> int: # missile / ranged weapon damage
+        if self.parent.equipment:
+            return self.parent.equipment.missile_damage_bonus + self.luck
         else:
             return 0
 

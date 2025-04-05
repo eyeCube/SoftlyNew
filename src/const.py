@@ -186,3 +186,9 @@ CLASS_CARBINES = 105
 CLASS_SNIPERS = 106
 CLASS_GRENADES = 107
 CLASS_MINES = 108
+
+SLOTS_SHORTHAND = {
+"mainhand" : "M",
+"offhand" : "O",
+"armor" : "W",
+    }

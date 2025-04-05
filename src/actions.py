@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import random
+
 from typing import Optional, Tuple, TYPE_CHECKING
 
 import color
@@ -100,7 +102,8 @@ class EquipAction(Action):
         self.item = item
 
     def perform(self) -> None:
-        self.entity.equipment.toggle_equip(self.item)
+        offhand = True if self.entity.equipment.mainhand is not None else False
+        self.entity.equipment.toggle_equip(self.item, offhand=offhand)
 
 
 class WaitAction(Action):
@@ -108,16 +111,13 @@ class WaitAction(Action):
         pass
 
 
-class TakeStairsAction(Action):
+class TakeStairsDownAction(Action):
     def perform(self) -> None:
         """
         Take the stairs, if any exist at the entity's location.
         """
         if (self.entity.x, self.entity.y) == self.engine.game_map.downstairs_location:
-            self.engine.game_world.generate_floor()
-            self.engine.message_log.add_message(
-                "You descend the staircase.", color.descend
-            )
+            self.engine.descend()
         else:
             raise exceptions.Impossible("There are no stairs here.")
 
@@ -166,21 +166,26 @@ class MeleeAction(ActionWithDirection):
             raise exceptions.Impossible("Nothing to attack.")
 
         damage = self.entity.fighter.power - target.fighter.defense
+        miss = False
+        if (random.random()*self.entity.fighter.attack <= target.fighter.dodge):
+            damage = 0
+            miss = True
 
         attack_desc = f"{self.entity.title.capitalize()}{self.entity.name} attacks {target.title}{target.name}"
-        if self.entity is self.engine.player:
-            attack_color = color.player_atk
-        else:
-            attack_color = color.enemy_atk
+        attack_color = color.player_atk if self.entity is self.engine.player else color.enemy_atk
 
         if damage > 0:
             self.engine.message_log.add_message(
                 f"{attack_desc} for {damage} hit points.", attack_color
             )
             target.fighter.hp -= damage
+        elif miss:
+            self.engine.message_log.add_message(
+                f"{attack_desc}, but misses.", attack_color
+            )
         else:
             self.engine.message_log.add_message(
-                f"{attack_desc} but does no damage.", attack_color
+                f"{attack_desc}, but the attack is ineffective.", attack_color
             )
 
 
