@@ -10,6 +10,7 @@ from const import *
 
 
 player = Actor(
+    weight=750,
     value=99,
     char=chr(ord('@')+256),
     color=(255, 255, 255),
@@ -23,6 +24,7 @@ player = Actor(
 )
 
 omnibot = Actor(
+    weight=500,
     value=0,
     char=chr(ord('d')+256),
     color=color.blue,
@@ -35,6 +37,7 @@ omnibot = Actor(
     level=Level(xp_given=35),
 )
 zetabie = Actor(
+    weight=900,
     value=0,
     char=chr(ord('z')+256),
     color=color.dkgreen,
@@ -48,6 +51,7 @@ zetabie = Actor(
 )
 
 confusion_scroll = Item(
+    weight=10,
     value=1,
     char="~",
     color=(207, 63, 255),
@@ -55,6 +59,7 @@ confusion_scroll = Item(
     consumable=consumable.ConfusionConsumable(number_of_turns=10),
 )
 fireball_scroll = Item(
+    weight=10,
     value=1,
     char="~",
     color=(255, 0, 0),
@@ -62,6 +67,7 @@ fireball_scroll = Item(
     consumable=consumable.FireballDamageConsumable(damage=12, radius=3),
 )
 health_potion = Item(
+    weight=10,
     value=1,
     char="!",
     color=(127, 0, 255),
@@ -69,6 +75,7 @@ health_potion = Item(
     consumable=consumable.HealingConsumable(amount=8),
 )
 lightning_scroll = Item(
+    weight=10,
     value=1,
     char="~",
     color=(255, 255, 0),
@@ -146,6 +153,76 @@ lightning_scroll = Item(
     spear / spears class
     lance / lances and rapiers class
     glaive / glaives class
+
+    ball cap
+    bowler hat
+    tiara
+    crown
+    hood
+    skull cap
+    helmet
+    helm
+    full helm
+
+    dresses / aprons
+        cloth
+    vests / combat vests
+        cloth
+        kevlar
+        ceramic
+    robes / coats
+        cloth
+    gambeson
+        cloth
+    scale armor
+        polymer
+        wood
+        bone
+        chitin
+        ceramic
+        crumetal
+        alloy
+    breastplate
+        polymer
+        bone
+        chitin
+        crumetal
+        alloy
+        allurite
+    plate jacket
+        polymer
+        bone
+        chitin
+        crumetal
+        alloy
+        allurite
+    buckler
+        polymer
+        wood
+        chitin
+        crumetal
+        alloy
+        allurite
+    shield
+        polymer
+        wood
+        chitin
+        crumetal
+        alloy
+        allurite
+    tower shield
+        polymer
+        wood
+        chitin
+        crumetal
+        alloy
+        allurite
+
+    cape
+    cloak
+    satchel / purse / briefcase
+    backpack
+    
 '''
 
 
@@ -159,7 +236,7 @@ def initialize_all_weapons():
     
 def initialize_swords():
     swords = {}
-    for material in MATERIALS:
+    for material in MATERIALS_WEAPONS:
         swords.update({material : Item(
             durability = round(16 * MAT_DURABILITY[material]),
             value = MAT_VALUE[material],
@@ -181,7 +258,7 @@ def initialize_swords():
 
 def initialize_daggers():
     daggers = {}
-    for material in MATERIALS:
+    for material in MATERIALS_WEAPONS:
         daggers.update({material : Item(
             durability = round(32 * MAT_DURABILITY[material]),
             value = MAT_VALUE[material],
@@ -203,7 +280,7 @@ def initialize_daggers():
     
 def initialize_halberds():
     halberds = {}
-    for material in MATERIALS:
+    for material in MATERIALS_WEAPONS:
         halberds.update({material : Item(
             durability = round(48 * MAT_DURABILITY[material]),
             value = 2 * MAT_VALUE[material],
@@ -225,7 +302,7 @@ def initialize_halberds():
     
 def initialize_axes():
     axes = {}
-    for material in MATERIALS:
+    for material in MATERIALS_WEAPONS:
         axes.update({material : Item(
             durability = round(32 * MAT_DURABILITY[material]),
             value = MAT_VALUE[material],
@@ -247,7 +324,7 @@ def initialize_axes():
     
 def initialize_spears():
     spears = {}
-    for material in MATERIALS:
+    for material in MATERIALS_WEAPONS:
         spears.update({material : Item(
             durability = round(48 * MAT_DURABILITY[material]),
             value = MAT_VALUE[material],

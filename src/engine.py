@@ -50,14 +50,31 @@ class Engine:
 
     def update_fov(self) -> None:
         """Recompute the visible area based on the players point of view."""
+        
+        def _circ(vismap, lgt, actor): # make FOV area into a circle shape
+            x, y = np.indices(vismap.shape)
+            distance = np.sqrt((x - actor.x)**2 + (y - actor.y)**2)
+            return (vismap & (distance <= lgt))
+
+        # compute player's FOV
+        # vision level is affected by the player's light radius
+        rad = int(min(max(self.player.fighter.vision*0.1, self.player.fighter.light*2), self.player.fighter.vision))
         self.game_map.visible[:] = compute_fov(
             self.game_map.tiles["transparent"],
             (self.player.x, self.player.y),
-            radius=int(min(max(self.player.fighter.vision*0.1, self.player.fighter.light*2), self.player.fighter.vision)),
+            radius=rad,
         )
-        x, y = np.indices(self.game_map.visible.shape)
-        distance = np.sqrt((x - self.player.x)**2 + (y - self.player.y)**2)
-        self.game_map.visible = (self.game_map.visible & (distance <= self.player.fighter.vision))
+        self.game_map.visible = _circ(self.game_map.visible, rad, self.player)
+        # compute player's FOV for things that are obscured
+        self.game_map.obscured_but_visible[:] = compute_fov(
+            self.game_map.tiles["not_obscuring"],
+            (self.player.x, self.player.y),
+            radius=self.player.fighter.vision,
+        )
+        self.game_map.obscured_but_visible = _circ(self.game_map.obscured_but_visible, rad, self.player)
+        self.game_map.obscured_but_visible = np.logical_and(self.game_map.obscured_but_visible, np.logical_not(self.game_map.visible))
+
+        # calculate the light grid
         self.game_map.remove_all_light()
         for actor in self.game_map.actors:
             if actor.fighter.light <= 0:
@@ -67,11 +84,9 @@ class Engine:
                 (actor.x, actor.y),
                 radius=actor.fighter.light,
             )
-            x, y = np.indices(lighthere.shape)
-            distance = np.sqrt((x - actor.x)**2 + (y - actor.y)**2)
-            lighthere = (lighthere & (distance <= actor.fighter.light))
+            lighthere = _circ(lighthere, actor.fighter.light, actor)
             self.game_map.lit_tiles[:] |= lighthere
-        # If a tile is "visible" it should be added to "explored".
+        # Update the set of tiles that the player can see clearly, and the set of "explored" tiles
         self.game_map.get_lit_and_visible()
         self.game_map.add_explored()
 

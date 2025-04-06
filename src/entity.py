@@ -32,7 +32,7 @@ class Entity:
         parent: Optional[GameMap] = None,
         x: int = 0,
         y: int = 0,
-        weight: int = 0,
+        weight: int = 0,    # kg, multiplied by 10 (so 1 kg == 10 weight units)
         value: int = 0,
         char: str = "?",
         color: Tuple[int, int, int] = (255, 255, 255),
@@ -61,6 +61,22 @@ class Entity:
     @property
     def gamemap(self) -> GameMap:
         return self.parent.gamemap
+
+    @property
+    def size(self) -> int:
+        if self.weight >= 400:
+            s = SIZE_GIANT
+        elif self.weight >= 100:
+            s = SIZE_LARGE
+        elif self.weight >= 25:
+            s = SIZE_MEDIUM
+        elif self.weight >= 6:
+            s = SIZE_SMALL
+        elif self.weight >= 1:
+            s = SIZE_TINY
+        else:
+            s = SIZE_MICRO
+        return s
 
     def spawn(self: T, gamemap: GameMap, x: int, y: int) -> T:
         """Spawn a copy of this instance at the given location."""

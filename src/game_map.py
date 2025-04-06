@@ -28,6 +28,9 @@ class GameMap:
         self.lit_tiles = np.full(  # Tiles lit up by light sources
             (width, height), fill_value=False, order="F"
         )
+        self.obscured_but_visible = np.full(  # Tiles the player can currently see but which are obscured partially by an obstacle
+            (width, height), fill_value=False, order="F"
+        )
         self.lit_and_visible = np.full(  # Tiles the player can currently see
             (width, height), fill_value=False, order="F"
         )
@@ -108,6 +111,7 @@ class GameMap:
     def add_explored(self):
         if self.engine.player.fighter.light >= 1:
             self.explored |= self.visible
+            self.explored |= self.obscured_but_visible
     def remove_all_light(self):
         self.lit_tiles = np.full(  # Tiles that are in the light
             (self.width, self.height), fill_value=False, order="F"
@@ -125,24 +129,33 @@ class GameMap:
         self.tiles_memory = np.where(self.visible, self.tiles, self.tiles_memory)
         
         console.rgb[0 : self.width, 0 : self.height] = np.select(
-            condlist=[self.lit_and_visible, self.visible, self.explored],
-            choicelist=[self.tiles_memory["light"], self.tiles_memory["deep"], self.tiles_memory["dark"]],
+            condlist=[self.lit_and_visible, self.visible, self.obscured_but_visible, self.explored],
+            choicelist=[self.tiles_memory["light"], self.tiles_memory["dark"], self.tiles_memory["obscured"], self.tiles_memory["deep"]],
             default=tile_types.SHROUD,
         )
 
+        # draw all other entities
         entities_sorted_for_rendering = sorted(
-            self.entities, key=lambda x: x.render_order.value*10000000 + x.value * 100000 + x.id
+            self.entities - {self.engine.player}, key=lambda x: x.render_order.value*10000000 + x.value * 100000 + x.id
         )
-
         for entity in entities_sorted_for_rendering:
             if self.lit_and_visible[entity.x, entity.y]:
                 console.print(
                     x=entity.x, y=entity.y, string=entity.char, fg=entity.color
                 )
+            elif self.obscured_but_visible[entity.x, entity.y]:
+                console.print(
+                    x=entity.x, y=entity.y, string='?', fg=(128,128,128)
+                )
             elif self.visible[entity.x, entity.y]:
                 console.print(
                     x=entity.x, y=entity.y, string='?', fg=(128,128,128)
                 )
+
+        # draw player lastly
+        console.print(
+            x=self.engine.player.x, y=self.engine.player.y, string=self.engine.player.char, fg=self.engine.player.color
+        )
 
 
 class GameWorld:

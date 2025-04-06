@@ -1,5 +1,11 @@
 import color
 
+SIZE_MICRO = 0      # mouse-sized       0-1kg
+SIZE_TINY = 1       # cat-sized         1-6kg
+SIZE_SMALL = 2      # dog-sized         6-25kg
+SIZE_MEDIUM = 3     # human-sized       25-100kg
+SIZE_LARGE = 4      # deer-sized        100-400kg
+SIZE_GIANT = 5      # bear-sized        400-1600kg
 
 ICON_IMPROVISED_BOMB = 256
 ICON_IMPROVISED_MINE = 257
@@ -59,17 +65,22 @@ ICON_ROGUE = 323
 MAT_POLYMER = 1
 MAT_WOOD = 2
 MAT_BONE = 3
-MAT_CERAMIC = 4
-MAT_METAL = 5
-MAT_ALLOY = 6
-MAT_NANO = 7
-MATERIALS = ( MAT_POLYMER, MAT_WOOD, MAT_BONE, MAT_CERAMIC, MAT_METAL, MAT_ALLOY, MAT_NANO,)
+MAT_CHITIN = 4
+MAT_CERAMIC = 5
+MAT_METAL = 6
+MAT_KEVLAR = 7
+MAT_ALLOY = 8
+MAT_NANO = 9
+MATERIALS_WEAPONS = ( MAT_POLYMER, MAT_WOOD, MAT_BONE, MAT_CHITIN, MAT_CERAMIC, MAT_METAL, MAT_ALLOY, MAT_NANO,)
+MATERIALS_ARMOR = ( MAT_POLYMER, MAT_WOOD, MAT_BONE, MAT_CHITIN, MAT_CERAMIC, MAT_METAL, MAT_KEVLAR, MAT_ALLOY, MAT_NANO,)
 MAT_COLORS = {
     MAT_POLYMER : color.polymer,
     MAT_WOOD    : color.wood,
+    MAT_CHITIN  : color.chitin,
     MAT_BONE    : color.bone,
     MAT_CERAMIC : color.ceramic,
     MAT_METAL   : color.metal,
+    MAT_KEVLAR  : color.kevlar,
     MAT_ALLOY   : color.alloy,
     MAT_NANO    : color.nano,
     }
@@ -77,42 +88,61 @@ MAT_NAMES = {
     MAT_POLYMER : "polymer",
     MAT_WOOD    : "wood",
     MAT_BONE    : "bone",
+    MAT_CHITIN  : "chitin",
     MAT_CERAMIC : "ceramic",
     MAT_METAL   : "crumetal",
+    MAT_KEVLAR  : "kevlar",
     MAT_ALLOY   : "alloy",
     MAT_NANO    : "nano",
     }
 MAT_DURABILITY = {
     MAT_POLYMER : 0.75,
     MAT_WOOD    : 1,
-    MAT_BONE    : 1.5,
+    MAT_BONE    : 2,
+    MAT_CHITIN  : 1.5,
     MAT_CERAMIC : 0.5,
     MAT_METAL   : 3,
+    MAT_KEVLAR  : 6,
     MAT_ALLOY   : 9,
     MAT_NANO    : 32,
+    }
+MAT_ARMOR = {
+    MAT_POLYMER : 0,
+    MAT_WOOD    : 0,
+    MAT_BONE    : 1,
+    MAT_CHITIN  : 1,
+    MAT_CERAMIC : 2,
+    MAT_METAL   : 2,
+    MAT_KEVLAR  : 2,
+    MAT_ALLOY   : 3,
+    MAT_NANO    : 4,
+    }
+MAT_DODGE = {
+    MAT_POLYMER : 0,
+    MAT_WOOD    : 1, # x2 for armor and weapons, x1 for hats
+    MAT_BONE    : 2,
+    MAT_CHITIN  : 3,
+    MAT_CERAMIC : 1,
+    MAT_METAL   : 0,
+    MAT_KEVLAR  : 5,
+    MAT_ALLOY   : 1,
+    MAT_NANO    : 3,
     }
 MAT_DAMAGE = {
     MAT_POLYMER : 2,
     MAT_WOOD    : 1,
     MAT_BONE    : 2,
+    MAT_CHITIN  : 1,
     MAT_CERAMIC : 4,
     MAT_METAL   : 3,
     MAT_ALLOY   : 4,
     MAT_NANO    : 5,
     }
-MAT_DODGE = {
-    MAT_POLYMER : 0,
-    MAT_WOOD    : 2,
-    MAT_BONE    : 2,
-    MAT_CERAMIC : 0,
-    MAT_METAL   : 0,
-    MAT_ALLOY   : 2,
-    MAT_NANO    : 4,
-    }
 MAT_ATTACK = {
     MAT_POLYMER : 0,
     MAT_WOOD    : 5,
     MAT_BONE    : 10,
+    MAT_CHITIN  : 15,
     MAT_CERAMIC : 15,
     MAT_METAL   : 20,
     MAT_ALLOY   : 25,
@@ -120,10 +150,12 @@ MAT_ATTACK = {
     }
 MAT_VALUE = {
     MAT_POLYMER : 0,
-    MAT_WOOD    : 1,
+    MAT_WOOD    : 0,
     MAT_BONE    : 1,
+    MAT_CHITIN  : 1,
     MAT_CERAMIC : 2,
     MAT_METAL   : 2,
+    MAT_KEVLAR  : 8,
     MAT_ALLOY   : 8,
     MAT_NANO    : 32,
     }
@@ -131,8 +163,10 @@ MAT_WEIGHT = {
     MAT_POLYMER : 1,
     MAT_WOOD    : 1.25,
     MAT_BONE    : 1.5,
+    MAT_CHITIN  : 1,
     MAT_CERAMIC : 1.5,
     MAT_METAL   : 2,
+    MAT_KEVLAR  : 1,
     MAT_ALLOY   : 1.75,
     MAT_NANO    : 0.75,
     }
@@ -140,17 +174,21 @@ MAT_SCARY = {
     MAT_POLYMER : 0,
     MAT_WOOD    : 0,
     MAT_BONE    : 1,
+    MAT_CHITIN  : 1,
     MAT_CERAMIC : 2,
     MAT_METAL   : 2,
-    MAT_ALLOY   : 3,
-    MAT_NANO    : 4,
+    MAT_KEVLAR  : 3,
+    MAT_ALLOY   : 4,
+    MAT_NANO    : 5,
     }
 MAT_BEAUTY = {
     MAT_POLYMER : -1,
     MAT_WOOD    : 1,
     MAT_BONE    : 0,
+    MAT_CHITIN  : 0,
     MAT_CERAMIC : 1,
     MAT_METAL   : 0,
+    MAT_KEVLAR  : -1,
     MAT_ALLOY   : 1,
     MAT_NANO    : 2,
     }
@@ -158,6 +196,7 @@ MAT_THROW_RANGE = {
     MAT_POLYMER : -2,
     MAT_WOOD    : -1,
     MAT_BONE    : 0,
+    MAT_CHITIN  : 0,
     MAT_CERAMIC : 0,
     MAT_METAL   : 0,
     MAT_ALLOY   : 1,

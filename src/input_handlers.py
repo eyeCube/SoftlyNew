@@ -28,10 +28,6 @@ MOVE_KEYS = {
     tcod.event.KeySym.DOWN: (0, 1),
     tcod.event.KeySym.LEFT: (-1, 0),
     tcod.event.KeySym.RIGHT: (1, 0),
-    tcod.event.KeySym.HOME: (-1, -1),
-    tcod.event.KeySym.END: (-1, 1),
-    tcod.event.KeySym.PAGEUP: (1, -1),
-    tcod.event.KeySym.PAGEDOWN: (1, 1),
     # Numpad keys.
     tcod.event.KeySym.KP_1: (-1, 1),
     tcod.event.KeySym.KP_2: (0, 1),
