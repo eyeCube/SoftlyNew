@@ -107,6 +107,7 @@ lightning_scroll = Item(
     laser rifle
     railgun
     grenade launcher
+    flame thrower
     
     sling / slings class
     bow / bows class
@@ -114,7 +115,7 @@ lightning_scroll = Item(
 
     light sword
     light knife
-    bombspear
+    pneumatic spear / bombspear
     bombhammer
     light baton
     light staff
