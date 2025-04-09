@@ -162,14 +162,22 @@ def tunnel_between(
         yield x, y
 
 
+
+
+    # -------------------------------------------------- #
+    #          Main dungeon generator function           #
+    # -------------------------------------------------- #
+
+
 def generate_dungeon(
     map_width: int,
     map_height: int,
     engine: Engine,
 ) -> GameMap:
-    """Generate a dungeon map based on the player's location."""
+    """Generate a new dungeon map based on the player's location."""
 
     # set the seed to the correct value based on player location
+    print("creating new zone: ({}, {})".format(engine.world_location[0], engine.world_location[1]))
     random.seed(engine.world_location[0]*10000 + engine.world_location[1]*100 + engine.world_seed)
     
     if engine.world_location[1] == 0:
@@ -178,14 +186,9 @@ def generate_dungeon(
         dungeon = _generate_warehouse(map_width, map_height, engine)
     else: # default (should never get here...)
         dungeon = _generate_warehouse(map_width, map_height, engine)
-        
-    # Place player in the dungeon
-    if engine.coming_from == 1:
-        engine.player.place(*dungeon.downstairs_location, dungeon)
-
-    # Generate upward staircase
-    if engine.world_location[1] >= 1: # TODO: only do this if this floor has not been generated before. Otherwise remember where the staircase is.
-        dungeon.tiles[(engine.player.x, engine.player.y)] = tile_types.up_stairs
+    
+    #print("seeding new zone: ", dungeon.seed_xy)
+    engine.explored_zones.update({(engine.world_location[0],engine.world_location[1]) : dungeon.seed_xy})
 
     return dungeon
 
@@ -204,17 +207,22 @@ def _generate_superhighway(
     first_room = RectangularRoom(0, 13, map_width, 16)
     rooms.append(first_room)
 
-    max_rooms = 60
+    max_rooms = 80
     room_min_size = 9
     room_max_size = 12
     __make_rooms(
         map_width, map_height, engine, dungeon, rooms, player, max_rooms, room_min_size, room_max_size,
-        connect_back=1, connect_back_min_rooms=0, tunnel_from_prev=0.2, walls=True, wall_tile=tile_types.blue_wall
+        connect_back=1, connect_back_min_rooms=0, tunnel_from_prev=0.2, walls=True, wall_tile=tile_types.red_wall,
+        downstairs_tile=tile_types.down_ladder, tunnel_tile=tile_types.wood_floor
         )
     
     dungeon.tiles[first_room.outer] = tile_types.concrete_highway
-
-    player.place(*first_room.center, dungeon)
+        
+    # Place player in the dungeon
+    if engine.coming_from == 1:
+        engine.player.place(*dungeon.downstairs_location, dungeon)
+    else:
+        player.place(*first_room.center, dungeon)
 
     return dungeon
     
@@ -225,8 +233,9 @@ def _generate_warehouse(
     engine: Engine,
 ) -> GameMap:
     """Generate a warehouse style map."""
-    
-    max_rooms = min(200, engine.world_location[1] * 50)
+
+    complexity = 15 # temporary -- adjust as needed...
+    max_rooms = min(200, engine.world_location[1] * complexity)
     room_min_size = 6
     room_max_size = 13
     
@@ -236,16 +245,25 @@ def _generate_warehouse(
     rooms: List[RectangularRoom] = []
 
     __make_rooms(map_width, map_height, engine, dungeon, rooms, player, max_rooms, room_min_size, room_max_size)
+
+    # Generate upward staircase
+    dungeon.upstairs_location = rooms[0].center
+    dungeon.tiles[dungeon.upstairs_location] = tile_types.up_stairs
+        
+    # Place player in the dungeon
+    engine.player.place(player.x, player.y, dungeon)
     
     return dungeon
 
 def __make_rooms(
     map_width, map_height, engine, dungeon, rooms, player, max_rooms, room_min_size, room_max_size,
     connect_back=0.4, connect_back_min_rooms=5, tunnel_from_prev=1,
-    walls=False, wall_tile=None, floor_tile=tile_types.concrete_floor
+    walls=False, wall_tile=None, floor_tile=tile_types.concrete_floor,
+    downstairs_tile=tile_types.down_stairs, tunnel_tile=tile_types.concrete_floor
     ):
 
-    center_of_last_room = (40, 20)
+    center_of_last_room = (0, 0)
+    center_of_first_room = (0,0)
 
     new_room = None
 
@@ -255,40 +273,46 @@ def __make_rooms(
         room_width = random.randint(room_min_size, room_max_size)
         room_height = random.randint(room_min_size, room_max_size)
 
-        x = random.randint(0, dungeon.width - room_width - 1)
-        y = random.randint(0, dungeon.height - room_height - 1)
-
-        # "RectangularRoom" class makes rectangles easier to work with
+        if tuple(engine.world_location) in engine.explored_zones.keys():
+            x,y = engine.explored_zones[tuple(engine.world_location)]
+        elif (i==0 and engine.world_location[1] > 0):
+            x = player.x - int(room_width * 0.5)
+            y = player.y - int(room_height * 0.5)
+        else:
+            x = random.randint(0, dungeon.width - room_width - 1)
+            y = random.randint(0, dungeon.height - room_height - 1)
+        dungeon.seed_xy = (x,y)
         new_room = RectangularRoom(x, y, room_width, room_height)
 
         # Run through the other rooms and see if they intersect with this one.
         if any(new_room.intersects(other_room) for other_room in rooms):
-            continue  # This room intersects, so go to the next attempt.
-        # If there are no intersections then the room is valid.
+            continue    # This room intersects, so go to the next attempt.
+                        # If there are no intersections then the room is valid.
 
-        # Dig out this rooms inner area.
+        # Build up walls around the room
         if walls:
-            dungeon.tiles[new_room.outer] = wall_tile
-            '''t = dungeon.tiles[new_room.outer]
-            np.where(np.equal(t, np.full((room_width, room_height), fill_value=floor_tile, order="F")), floor_tile, wall_tile)'''
-        dungeon.tiles[new_room.inner] = floor_tile
+            dungeon.tiles[new_room.outer][np.logical_and(
+                dungeon.tiles[new_room.outer]['tileid'] != floor_tile['tileid'],
+                dungeon.tiles[new_room.outer]['tileid'] != tunnel_tile['tileid']
+                )] = wall_tile
 
         if i == 0:
-            # The first room, where the player starts.
-            if (engine.coming_from == -1):
-                player.place(*new_room.center, dungeon)
-        else:  # All rooms after the first.
-            # Dig out a tunnel between this room and the previous one.
-            if random.random() < tunnel_from_prev:
-                for x, y in tunnel_between(rooms[-1].center, new_room.center):
-                    dungeon.tiles[x, y] = floor_tile
-            # randomly connect back to first room to reduce linearity
-            if (len(rooms) >= connect_back_min_rooms and random.random() < connect_back):
-                index = 0
-                for x, y in tunnel_between(rooms[index].center, new_room.center):
-                    dungeon.tiles[x, y] = floor_tile
-
+            center_of_first_room = new_room.center
+        # Dig out a tunnel between this room and the previous one.
+        if (i > 0 and random.random() < tunnel_from_prev):
+            for x, y in tunnel_between(rooms[-1].center, new_room.center):
+                if dungeon.tiles[x, y] != floor_tile:
+                    dungeon.tiles[x, y] = tunnel_tile
+        # randomly connect back to first room to reduce linearity
+        if (len(rooms) >= connect_back_min_rooms and random.random() < connect_back):
+            index = 0
             center_of_last_room = new_room.center
+            for x, y in tunnel_between(rooms[index].center, new_room.center):
+                if dungeon.tiles[x, y] != floor_tile:
+                    dungeon.tiles[x, y] = tunnel_tile
+            
+        # Dig out this room's inner area
+        dungeon.tiles[new_room.inner] = floor_tile
         
         i += 1
 
@@ -297,5 +321,6 @@ def __make_rooms(
         # Finally, append the new room to the list.
         rooms.append(new_room)
 
-    dungeon.tiles[center_of_last_room] = tile_types.down_stairs
+    dungeon.tiles[center_of_last_room] = downstairs_tile
     dungeon.downstairs_location = center_of_last_room
+        

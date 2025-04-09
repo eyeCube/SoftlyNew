@@ -25,11 +25,7 @@ background_image = tcod.image.load("../img/softly-main-menu.png")[:, :, :3]
 def new_game() -> Engine:
     """Return a brand new game session as an Engine instance."""
     map_width = 80
-    map_height = 43
-
-    room_max_size = 10
-    room_min_size = 6
-    max_rooms = 30
+    map_height = 41
 
     player = copy.deepcopy(entity_factories.player)
 
@@ -37,9 +33,6 @@ def new_game() -> Engine:
 
     engine.game_world = GameWorld(
         engine=engine,
-        max_rooms=max_rooms,
-        room_min_size=room_min_size,
-        room_max_size=room_max_size,
         map_width=map_width,
         map_height=map_height,
     )
@@ -48,7 +41,7 @@ def new_game() -> Engine:
     engine.update_fov()
 
     engine.message_log.add_message(
-        "Welcome to the Sphere", color.welcome_text
+        f"{engine.player.name} enters the town of Ka'tyyk", color.welcome_text
     )
 
     dagger = copy.deepcopy(entity_factories.weapons[CLASS_DAGGERS][MAT_METAL])
@@ -56,10 +49,10 @@ def new_game() -> Engine:
     player.inventory.items.append(dagger)
     player.equipment.toggle_equip(dagger, add_message=False)
     
-    leather_armor = copy.deepcopy(entity_factories.leather_armor)
-    leather_armor.parent = player.inventory
-    player.inventory.items.append(leather_armor)
-    player.equipment.toggle_equip(leather_armor, add_message=False)
+    armor = copy.deepcopy(entity_factories.gambeson)
+    armor.parent = player.inventory
+    player.inventory.items.append(armor)
+    player.equipment.toggle_equip(armor, add_message=False)
     
     torch = copy.deepcopy(entity_factories.torch)
     torch.parent = player.inventory
@@ -67,6 +60,9 @@ def new_game() -> Engine:
     player.equipment.toggle_equip(torch, add_message=False, offhand=True)
 
     player.fighter.hp = player.fighter.max_hp
+    
+    engine.player_x = -1
+    engine.player_y = -1
     
     engine.update_fov()
 
@@ -127,7 +123,7 @@ class MainMenu(input_handlers.BaseEventHandler):
             raise SystemExit()
         elif event.sym == tcod.event.KeySym.c:
             try:
-                return input_handlers.MainGameEventHandler(load_game("savegame.sav"))
+                return input_handlers.MainGameEventHandler(load_game("../sav/game.sav"))
             except FileNotFoundError:
                 return input_handlers.PopupMessage(self, "No saved game to load.")
             except Exception as exc:

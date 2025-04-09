@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from const import *
+
 import random
+import math
 
 from typing import Optional, Tuple, TYPE_CHECKING
 
@@ -114,10 +117,23 @@ class WaitAction(Action):
 class TakeStairsDownAction(Action):
     def perform(self) -> None:
         """
-        Take the stairs, if any exist at the entity's location.
+        Take the stairs down, if any exist at the entity's location.
         """
-        if (self.entity.x, self.entity.y) == self.engine.game_map.downstairs_location:
+        if (   DOWN_STAIRCASE == self.engine.game_map.get_tile_at_location(self.entity.x, self.entity.y)
+            or DOWN_LADDER == self.engine.game_map.get_tile_at_location(self.entity.x, self.entity.y)
+            ):
             self.engine.descend()
+        else:
+            raise exceptions.Impossible("There are no stairs here.")
+class TakeStairsUpAction(Action):
+    def perform(self) -> None:
+        """
+        Take the stairs up, if any exist at the entity's location.
+        """
+        if (   UP_STAIRCASE == self.engine.game_map.get_tile_at_location(self.entity.x, self.entity.y)
+            or UP_LADDER == self.engine.game_map.get_tile_at_location(self.entity.x, self.entity.y)
+            ):
+            self.engine.ascend()
         else:
             raise exceptions.Impossible("There are no stairs here.")
 
@@ -165,7 +181,8 @@ class MeleeAction(ActionWithDirection):
         if not target:
             raise exceptions.Impossible("Nothing to attack.")
 
-        damage = self.entity.fighter.power - target.fighter.defense
+        p2 = 0.5 * self.entity.fighter.power
+        damage = max(0, math.ceil(p2 + random.random()*p2) - target.fighter.defense)
         miss = False
         if (random.random()*self.entity.fighter.attack <= target.fighter.dodge):
             damage = 0

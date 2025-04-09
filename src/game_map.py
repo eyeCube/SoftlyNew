@@ -4,7 +4,10 @@ from typing import Iterable, Iterator, Optional, TYPE_CHECKING
 
 import numpy as np  # type: ignore
 from tcod.console import Console
+from tcod import libtcodpy
 
+from const import *
+import color
 from entity import Actor, Item
 import tile_types
 
@@ -15,33 +18,35 @@ if TYPE_CHECKING:
 
 class GameMap:
     def __init__(
-        self, engine: Engine, width: int, height: int, entities: Iterable[Entity] = ()
+        self, engine: Engine, width: int, height: int, entities: Iterable[Entity] = (),
+        default_fill: tile_types.tile_dt = tile_types.concrete_wall
     ):
         self.engine = engine
         self.width, self.height = width, height
         self.entities = set(entities)
             # tiles: what is actually there in the game world
-        self.tiles = np.full((width, height), fill_value=tile_types.white_wall, order="F")
+        self.tiles = np.full((width, height), fill_value=default_fill, dtype=tile_types.tile_dt)
             # tiles_memory: what the player remembers seeing / what is currently displayed
-        self.tiles_memory = np.full((width, height), fill_value=tile_types.white_wall, order="F")
+        self.tiles_memory = np.full((width, height), fill_value=default_fill, dtype=tile_types.tile_dt)
         
         self.lit_tiles = np.full(  # Tiles lit up by light sources
-            (width, height), fill_value=False, order="F"
+            (width, height), fill_value=False, dtype=bool
         )
         self.obscured_but_visible = np.full(  # Tiles the player can currently see but which are obscured partially by an obstacle
-            (width, height), fill_value=False, order="F"
+            (width, height), fill_value=False, dtype=bool
         )
         self.lit_and_visible = np.full(  # Tiles the player can currently see
-            (width, height), fill_value=False, order="F"
+            (width, height), fill_value=False, dtype=bool
         )
         self.visible = np.full(  # Tiles the player can currently see but are not illuminated
-            (width, height), fill_value=False, order="F"
+            (width, height), fill_value=False, dtype=bool
         )
         self.explored = np.full(  # Tiles the player has seen before
-            (width, height), fill_value=False, order="F"
+            (width, height), fill_value=False, dtype=bool
         )
 
         self.downstairs_location = (0, 0)
+        self.upstairs_location = (0, 0)
 
     @property
     def gamemap(self) -> GameMap:
@@ -101,6 +106,9 @@ class GameMap:
 
         return None
 
+    def get_tile_at_location(self, x: int, y: int) -> tile_types.tile_dt:
+        return self.tiles["tileid"][x,y]
+
     def in_bounds(self, x: int, y: int) -> bool:
         """Return True if x and y are inside of the bounds of this map."""
         return 0 <= x < self.width and 0 <= y < self.height
@@ -139,17 +147,32 @@ class GameMap:
             self.entities - {self.engine.player}, key=lambda x: x.render_order.value*10000000 + x.value * 100000 + x.id
         )
         for entity in entities_sorted_for_rendering:
+            bghere = tuple(console.bg[entity.x, entity.y])
+            tile = self.get_tile_at_location(entity.x, entity.y)
+            banned = (DOWN_STAIRCASE, UP_STAIRCASE,)
+            if tile in banned:
+                fgcol = entity.color
+                bgcol = bghere
+            else:
+                if len(self.get_entities_at_location(entity.x, entity.y)) <= 1:
+                    fgcol = entity.color
+                    bgcol = bghere
+                else:
+                    fgcol = color.black
+                    bgcol = color.dkgreen
+            
             if self.lit_and_visible[entity.x, entity.y]:
-                console.print(
-                    x=entity.x, y=entity.y, string=entity.char, fg=entity.color
+                libtcodpy.console_put_char_ex(
+                    console,
+                    entity.x, entity.y, entity.char, fgcol, bgcol
                 )
             elif self.obscured_but_visible[entity.x, entity.y]:
                 console.print(
-                    x=entity.x, y=entity.y, string='?', fg=(128,128,128)
+                    x=entity.x, y=entity.y, string='?', fg=color.gray
                 )
             elif self.visible[entity.x, entity.y]:
                 console.print(
-                    x=entity.x, y=entity.y, string='?', fg=(128,128,128)
+                    x=entity.x, y=entity.y, string='?', fg=color.gray
                 )
 
         # draw player lastly
@@ -169,9 +192,6 @@ class GameWorld:
         engine: Engine,
         map_width: int,
         map_height: int,
-        max_rooms: int,
-        room_min_size: int,
-        room_max_size: int,
         current_floor: int = 1
     ):
         self.engine = engine
@@ -179,20 +199,10 @@ class GameWorld:
         self.map_width = map_width
         self.map_height = map_height
 
-        self.max_rooms = max_rooms
-
-        self.room_min_size = room_min_size
-        self.room_max_size = room_max_size
-
-        self.current_floor = current_floor
-
     def generate_floor(self) -> None:
         from procgen import generate_dungeon
 
         self.engine.game_map = generate_dungeon(
-            max_rooms=self.max_rooms,
-            room_min_size=self.room_min_size,
-            room_max_size=self.room_max_size,
             map_width=self.map_width,
             map_height=self.map_height,
             engine=self.engine,

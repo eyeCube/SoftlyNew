@@ -69,7 +69,7 @@ class Level(BaseComponent):
     def increase_tech(self, amount: int = 1) -> None:
         self.parent.fighter._tech += amount
 
-        self.engine.message_log.add_message("You feel sharp!")
+        self.engine.message_log.add_message("You feel techy!")
 
         self.increase_level()
 

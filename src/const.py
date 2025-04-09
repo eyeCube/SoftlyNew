@@ -1,11 +1,26 @@
 import color
 
+CHASM = 0
+DOWN_STAIRCASE = 10
+UP_STAIRCASE = 11
+DOWN_LADDER = 12
+UP_LADDER = 13
+RUSTED_WALL = 20
+DIRTY_WALL = 21
+WHITE_WALL = 22
+WOOD_WALL = 23
+DIRTY_FLOOR = 110
+WHITE_FLOOR = 111
+WOOD_FLOOR = 112
+
 SIZE_MICRO = 0      # mouse-sized       0-1kg
 SIZE_TINY = 1       # cat-sized         1-6kg
 SIZE_SMALL = 2      # dog-sized         6-25kg
 SIZE_MEDIUM = 3     # human-sized       25-100kg
 SIZE_LARGE = 4      # deer-sized        100-400kg
 SIZE_GIANT = 5      # bear-sized        400-1600kg
+
+ICON_CORPSE = 5
 
 ICON_IMPROVISED_BOMB = 256
 ICON_IMPROVISED_MINE = 257

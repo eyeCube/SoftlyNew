@@ -25,19 +25,66 @@ class Engine:
     game_world: GameWorld
 
     def __init__(self, player: Actor):
+        self.coming_from = -1 # -1 is from above, 1 from below
         self.message_log = MessageLog()
         self.mouse_location = (0, 0)
         self.player = player
         random.seed(time.time())
-        self.world_seed = int(random.random()*1000)
+        self.world_seed = int(random.random()*1000000)
         self.world_location = [40,0] # x, y
+        self.explored_zones = {} # world location (x,y,) : map starting seed location (x,y,)
+
+    def save_dungeon(self):
+        """Save this Engine instance as a compressed file."""
+        filename = "../sav/wd_{},{}.sav".format(self.world_location[0], self.world_location[1])
+        print("saving zone: ({}, {})".format(self.world_location[0], self.world_location[1]))
+        self.game_map.engine = None
+        _entities = self.game_map.entities
+        self.game_map.entities = set()
+        save_data = lzma.compress(pickle.dumps(self.game_map))
+        with open(filename, "wb") as f:
+            f.write(save_data)
+        self.game_map.engine = self
+        self.game_map.entities = _entities
+    def load_dungeon(self):
+        filename = "../sav/wd_{},{}.sav".format(self.world_location[0], self.world_location[1])
+        print("loading zone: ({}, {})".format(self.world_location[0], self.world_location[1]))
+        with open(filename, "rb") as f:
+            self.game_map = pickle.loads(lzma.decompress(f.read()))
+        self.game_map.engine = self
+        self.game_map.entities = set([self.player])
+        # load in new set of entities based on what the player has done on this floor
 
     def descend(self):
-        self.game_world.current_floor += 1
-        self.world_location = [self.world_location[0], self.game_world.current_floor]
-        self.game_world.generate_floor()
+        self.coming_from = -1
+        # save
+        self.save_dungeon()
+        # change floors
+        self.world_location = [self.world_location[0], self.world_location[1] + 1]
+        # load or generate new
+        if (self.world_location[0],self.world_location[1]) in self.explored_zones:
+            dungeon = self.load_dungeon()
+        else:
+            self.game_world.generate_floor()
+        print("location: ", self.world_location)
+
         self.message_log.add_message(
             "You descend the staircase.", color.descend
+        )
+    def ascend(self):
+        self.coming_from = 1
+        # save
+        self.save_dungeon()
+        # change floors
+        self.world_location = [self.world_location[0], self.world_location[1] - 1]
+        # load or generate new
+        if (self.world_location[0],self.world_location[1]) in self.explored_zones:
+            dungeon = self.load_dungeon()
+        else:
+            self.game_world.generate_floor()
+        print("location: ", self.world_location)
+        self.message_log.add_message(
+            "You ascend the staircase.", color.ascend
         )
 
     def handle_ai_turns(self) -> None:
@@ -58,7 +105,8 @@ class Engine:
 
         # compute player's FOV
         # vision level is affected by the player's light radius
-        rad = int(min(max(self.player.fighter.vision*0.1, self.player.fighter.light*2), self.player.fighter.vision))
+        lgt_bonus = 10 if self.world_location[1] == 0 else 0
+        rad = int(min(max(self.player.fighter.vision*0.1, (self.player.fighter.light + lgt_bonus)*2), self.player.fighter.vision))
         self.game_map.visible[:] = compute_fov(
             self.game_map.tiles["transparent"],
             (self.player.x, self.player.y),
@@ -82,9 +130,9 @@ class Engine:
             lighthere = compute_fov(
                 self.game_map.tiles["transparent"],
                 (actor.x, actor.y),
-                radius=actor.fighter.light,
+                radius=actor.fighter.light + lgt_bonus,
             )
-            lighthere = _circ(lighthere, actor.fighter.light, actor)
+            lighthere = _circ(lighthere, actor.fighter.light + lgt_bonus, actor)
             self.game_map.lit_tiles[:] |= lighthere
         # Update the set of tiles that the player can see clearly, and the set of "explored" tiles
         self.game_map.get_lit_and_visible()
@@ -93,23 +141,23 @@ class Engine:
     def render(self, console: Console) -> None:
         self.game_map.render(console)
 
-        self.message_log.render(console=console, x=21, y=45, width=60, height=5)
+        self.message_log.render(console=console, x=21, y=43, width=60, height=5)
 
         render_functions.render_bar(
             console=console,
             current_value=self.player.fighter.hp,
             maximum_value=self.player.fighter.max_hp,
-            total_width=20,
+            total_width=18,
         )
 
         render_functions.render_dungeon_level(
             console=console,
-            dungeon_level=self.game_world.current_floor,
-            location=(0, 47),
+            dungeon_level=self.world_location[1],
+            location=(0, 45),
         )
 
         render_functions.render_names_at_mouse_location(
-            console=console, x=21, y=44, engine=self
+            console=console, x=21, y=41, engine=self
         )
 
     def save_as(self, filename: str) -> None:

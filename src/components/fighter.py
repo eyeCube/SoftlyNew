@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from const import *
 import color
 from components.base_component import BaseComponent
 from render_order import RenderOrder
@@ -122,7 +123,7 @@ class Fighter(BaseComponent):
     @property
     def dodge_bonus(self) -> int:
         if self.parent.equipment:
-            return self.parent.equipment.dr_bonus + 2*self.luck
+            return self.parent.equipment.dr_bonus + 2*self.luck # or 3 if you have combat training
         else:
             return 0
 
@@ -135,7 +136,7 @@ class Fighter(BaseComponent):
     @property
     def attack_bonus(self) -> int:
         if self.parent.equipment:
-            return self.parent.equipment.attack_bonus + 5*self.guts
+            return self.parent.equipment.attack_bonus + 3*self.guts # or 5 if you have combat training
         else:
             return 0
         
@@ -155,7 +156,7 @@ class Fighter(BaseComponent):
     @property
     def accuracy_bonus(self) -> int: # missile / ranged weapon accuracy
         if self.parent.equipment:
-            return self.parent.equipment.accuracy_bonus + 5*self.luck
+            return self.parent.equipment.accuracy_bonus + 3*self.luck # or 5 if you have marksman skill
         else:
             return 0
     @property
@@ -173,7 +174,8 @@ class Fighter(BaseComponent):
             death_message = f"{self.parent.title.capitalize()}{self.parent.name} dies."
             death_message_color = color.enemy_die
 
-        self.parent.char = "%"
+        self.parent.value = 0 # corpses are not worth anything. You pick up items, not corpses in this game
+        self.parent.char = chr(432)
         self.parent.color = (191, 0, 0)
         self.parent.blocks_movement = False
         self.parent.ai = None

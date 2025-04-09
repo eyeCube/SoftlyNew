@@ -19,7 +19,7 @@ def save_game(handler: input_handlers.BaseEventHandler, filename: str) -> None:
 
 def main() -> None:
     screen_width = 80
-    screen_height = 50
+    screen_height = 48
 
     tileset = tcod.tileset.load_tilesheet(
         "../tilesets/tileset_16x16_tiles.png", 16, 32, [i for i in range(512)]
@@ -35,12 +35,12 @@ def main() -> None:
         title="Softly Into the Night",
         vsync=True,
     ) as context:
-        root_console = tcod.console.Console(screen_width, screen_height, order="F")
+        root_console = context.new_console(screen_width, screen_height, magnification=1, order="F")
         try:
             while True:
                 root_console.clear()
                 handler.on_render(console=root_console)
-                context.present(root_console)
+                context.present(root_console, keep_aspect=True, integer_scaling=True)
 
                 try:
                     for event in tcod.event.wait():
@@ -56,10 +56,10 @@ def main() -> None:
         except exceptions.QuitWithoutSaving:
             raise
         except SystemExit:  # Save and quit.
-            save_game(handler, "savegame.sav")
+            save_game(handler, "../sav/game.sav")
             raise
         except BaseException:  # Save on any other unexpected exception.
-            save_game(handler, "savegame.sav")
+            save_game(handler, "../sav/game.sav")
             raise
 
 

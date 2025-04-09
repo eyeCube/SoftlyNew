@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import os
+import shutil
 
 from typing import Callable, Optional, Tuple, TYPE_CHECKING, Union
 
 import tcod
+from tcod import libtcodpy
 
 from const import *
 import actions
@@ -188,10 +190,11 @@ class AskUserEventHandler(EventHandler):
 
 
 class CharacterScreenEventHandler(AskUserEventHandler):
-    TITLE = "Character Information"
 
     def on_render(self, console: tcod.Console) -> None:
         super().on_render(console)
+        
+        TITLE = f"{self.engine.player.name}"
 
         if self.engine.player.x <= 30:
             x = 40
@@ -200,7 +203,7 @@ class CharacterScreenEventHandler(AskUserEventHandler):
 
         y = 0
 
-        width = len(self.TITLE) + 4
+        width = 32
 
         # TODO: set color of text! fg and bg (right now it's going by what's already there)
 
@@ -208,62 +211,71 @@ class CharacterScreenEventHandler(AskUserEventHandler):
             x=x,
             y=y,
             width=width,
-            height=15,
-            title=self.TITLE,
+            height=25,
+            title=TITLE,
             clear=True,
-            fg=(255, 255, 255),
-            bg=(0, 0, 0),
+            fg=color.accent,
+            bg=color.deepdeep,
+        )
+        
+        '''console.print(
+            x=x + 1, y=y + 1, string=f"{self.engine.player.name}"
+        )'''
+
+        console.print(
+            x=x + 1, y=y + 3, string=f"Lv      {self.engine.player.level.current_level}"
+        )
+        console.print(
+            x=x + 1, y=y + 4, string=f"Xp      {self.engine.player.level.current_xp} / {self.engine.player.level.experience_to_next_level}"
         )
         
         console.print(
-            x=x + 1, y=y + 1, string=f"{self.engine.player.name}"
+            x=x + 1, y=y + 7, string=f"Zeal    {self.engine.player.fighter.zeal}"
+        )
+        console.print(
+            x=x + 1, y=y + 8, string=f"Guts    {self.engine.player.fighter.guts}"
+        )
+        console.print(
+            x=x + 1, y=y + 9, string=f"Tech    {self.engine.player.fighter.tech}"
+        )
+        console.print(
+            x=x + 1, y=y + 10, string=f"Luck    {self.engine.player.fighter.luck}"
         )
 
         console.print(
-            x=x + 1, y=y + 3, string=f"Lv:   {self.engine.player.level.current_level}"
+            x=x + 1, y=y + 12, string=f"mATK    {self.engine.player.fighter.attack}"
         )
         console.print(
-            x=x + 1, y=y + 4, string=f"Xp:   {self.engine.player.level.current_xp}"
+            x=x + 1, y=y + 13, string=f"mDMG    {self.engine.player.fighter.power}"
         )
         console.print(
-            x=x + 1,
-            y=y + 5,
-            string=f"Need: {self.engine.player.level.experience_to_next_level}",
-        )
-
-        console.print(
-            x=x + 1, y=y + 7, string=f"mATK: {self.engine.player.fighter.attack}"
+            x=x + 1, y=y + 14, string=f"rATK    {self.engine.player.fighter.accuracy}"
         )
         console.print(
-            x=x + 1, y=y + 8, string=f"mDMG: {self.engine.player.fighter.power}"
+            x=x + 1, y=y + 15, string=f"rDMG    {self.engine.player.fighter.missile_damage}"
         )
         console.print(
-            x=x + 1, y=y + 9, string=f"rATK: {self.engine.player.fighter.accuracy}"
+            x=x + 1, y=y + 16, string=f"AV      {self.engine.player.fighter.defense}"
         )
         console.print(
-            x=x + 1, y=y + 10, string=f"rDMG: {self.engine.player.fighter.missile_damage}"
-        )
-        console.print(
-            x=x + 1, y=y + 11, string=f"AV:   {self.engine.player.fighter.defense}"
-        )
-        console.print(
-            x=x + 1, y=y + 12, string=f"DR:   {self.engine.player.fighter.dodge}"
+            x=x + 1, y=y + 17, string=f"DR      {self.engine.player.fighter.dodge}"
         )
 
         console.print(
-            x=x + 1, y=y + 14, string=f"BEAU: {self.engine.player.fighter.beauty}"
+            x=x + 1, y=y + 19, string=f"Beauty  {self.engine.player.fighter.beauty}"
         )
         console.print(
-            x=x + 1, y=y + 15, string=f"SCRY: {self.engine.player.fighter.scary}"
+            x=x + 1, y=y + 20, string=f"Scary   {self.engine.player.fighter.scary}"
         )
         console.print(
-            x=x + 1, y=y + 16, string=f"COUR: {self.engine.player.fighter.courage}"
+            x=x + 1, y=y + 21, string=f"Courage {self.engine.player.fighter.courage}"
+        )
+        
+        console.print(
+            x=x + 1, y=y + 23, string=f"Light   {self.engine.player.fighter.light}"
         )
         console.print(
-            x=x + 1, y=y + 18, string=f"LGT:  {self.engine.player.fighter.light}"
-        )
-        console.print(
-            x=x + 1, y=y + 19, string=f"VIS:  {self.engine.player.fighter.vision}"
+            x=x + 1, y=y + 24, string=f"Vision  {self.engine.player.fighter.vision}"
         )
 
 
@@ -285,8 +297,8 @@ class LevelUpEventHandler(AskUserEventHandler):
             height=8,
             title=self.TITLE,
             clear=True,
-            fg=(255, 255, 255),
-            bg=(0, 0, 0),
+            fg=color.accent,
+            bg=color.deepdeep,
         )
 
         console.print(x=x + 1, y=1, string="Congratulations! You level up!")
@@ -380,8 +392,8 @@ class InventoryEventHandler(AskUserEventHandler):
             height=height,
             title=self.TITLE,
             clear=True,
-            fg=(255, 255, 255),
-            bg=(0, 0, 0),
+            fg=color.accent,
+            bg=color.deepdeep,
         )
 
         if number_of_items_in_inventory > 0:
@@ -457,8 +469,8 @@ class SelectIndexHandler(AskUserEventHandler):
         """Highlight the tile under the cursor."""
         super().on_render(console)
         x, y = self.engine.mouse_location
-        console.rgb["bg"][x, y] = color.white
-        console.rgb["fg"][x, y] = color.black
+        console.rgb["bg"][x, y] = color.accent
+        console.rgb["fg"][x, y] = color.deep
 
     def ev_keydown(self, event: tcod.event.KeyDown) -> Optional[ActionOrHandler]:
         """Check for key movement or confirmation keys."""
@@ -568,6 +580,10 @@ class MainGameEventHandler(EventHandler):
             tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT
         ):
             return actions.TakeStairsDownAction(player, True)
+        elif key == tcod.event.KeySym.COMMA and modifier & (
+            tcod.event.KMOD_LSHIFT | tcod.event.KMOD_RSHIFT
+        ):
+            return actions.TakeStairsUpAction(player, True)
 
         if key in MOVE_KEYS:
             dx, dy = MOVE_KEYS[key]
@@ -599,8 +615,10 @@ class MainGameEventHandler(EventHandler):
 class GameOverEventHandler(EventHandler):
     def on_quit(self) -> None:
         """Handle exiting out of a finished game."""
-        if os.path.exists("savegame.sav"):
-            os.remove("savegame.sav")  # Deletes the active save file.
+        if os.path.exists("../save/game.sav"):
+            os.remove("../sav/game.sav")  # Deletes the active save file. YOU LOST THE GAME after all.
+            shutil.rmtree("../sav/")
+            os.makedirs("../sav/")
         raise exceptions.QuitWithoutSaving()  # Avoid saving a finished game.
 
     def ev_quit(self, event: tcod.event.Quit) -> None:
@@ -630,12 +648,12 @@ class HistoryViewer(EventHandler):
     def on_render(self, console: tcod.Console) -> None:
         super().on_render(console)  # Draw the main state as the background.
 
-        log_console = tcod.Console(console.width - 6, console.height - 6)
+        log_console = tcod.console.Console(console.width - 6, console.height - 6)
 
         # Draw a frame with a custom banner title.
         log_console.draw_frame(0, 0, log_console.width, log_console.height)
         log_console.print_box(
-            0, 0, log_console.width, 1, "┤Message history├", alignment=tcod.CENTER
+            0, 0, log_console.width, 1, "┤Message history├", alignment=libtcodpy.CENTER
         )
 
         # Render the message log using the cursor parameter.
