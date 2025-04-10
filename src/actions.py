@@ -111,7 +111,11 @@ class EquipAction(Action):
 
 class WaitAction(Action):
     def perform(self) -> None:
-        pass
+        dest_x, dest_y = (self.engine.player.x, self.engine.player.y,)
+        if (self.performedByPlayer and self.engine.game_map.tiles["fall_through"][dest_x, dest_y]):
+            self.entity.move_to(*self.engine.game_map.downstairs_location)
+            self.engine.descend(new_stairs=False, reposition=(dest_x, dest_y,))
+            return
 
 
 class TakeStairsDownAction(Action):
@@ -119,23 +123,19 @@ class TakeStairsDownAction(Action):
         """
         Take the stairs down, if any exist at the entity's location.
         """
-        if (   DOWN_STAIRCASE == self.engine.game_map.get_tile_at_location(self.entity.x, self.entity.y)
-            or DOWN_LADDER == self.engine.game_map.get_tile_at_location(self.entity.x, self.entity.y)
-            ):
+        if self.engine.game_map.get_tile_is_staircase_down_at_location(self.entity.x, self.entity.y):
             self.engine.descend()
         else:
-            raise exceptions.Impossible("There are no stairs here.")
+            raise exceptions.Impossible("There is no passage leading down here.")
 class TakeStairsUpAction(Action):
     def perform(self) -> None:
         """
         Take the stairs up, if any exist at the entity's location.
         """
-        if (   UP_STAIRCASE == self.engine.game_map.get_tile_at_location(self.entity.x, self.entity.y)
-            or UP_LADDER == self.engine.game_map.get_tile_at_location(self.entity.x, self.entity.y)
-            ):
+        if self.engine.game_map.get_tile_is_staircase_up_at_location(self.entity.x, self.entity.y):
             self.engine.ascend()
         else:
-            raise exceptions.Impossible("There are no stairs here.")
+            raise exceptions.Impossible("There is no passage leading up here.")
 
 
 class ActionWithDirection(Action):
@@ -210,10 +210,16 @@ class MovementAction(ActionWithDirection):
     def perform(self) -> None:
         dest_x, dest_y = self.dest_xy
 
-        if (self.performedByPlayer and self.target_entity is not None):
-            self.engine.message_log.add_message(
-                f"Here: {self.target_entity.name}", (128,128,128,)
-                )
+        if self.performedByPlayer:
+            if self.engine.game_map.tiles["fall_through"][dest_x, dest_y]:
+                self.entity.move_to(*self.engine.game_map.downstairs_location)
+                self.engine.descend(new_stairs=False, reposition=(dest_x, dest_y,))
+                return
+            
+            if self.target_entity is not None:
+                self.engine.message_log.add_message(
+                    f"Here: {self.target_entity.name}", (128,128,128,)
+                    )
             
         if not self.engine.game_map.in_bounds(dest_x, dest_y):
             # Destination is out of bounds.
@@ -225,7 +231,7 @@ class MovementAction(ActionWithDirection):
             # Destination is blocked by an entity.
             raise exceptions.Impossible("That way is blocked.")
 
-        self.entity.move(self.dx, self.dy)
+        self.entity.move_to(dest_x, dest_y)
 
 
 class BumpAction(ActionWithDirection):

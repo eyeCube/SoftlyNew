@@ -108,6 +108,10 @@ class Entity:
         # Move the entity by a given amount
         self.x += dx
         self.y += dy
+    def move_to(self, dest_x: int, dest_y: int) -> None:
+        # Move the entity by a given amount
+        self.x = dest_x
+        self.y = dest_y
 
 
 class Actor(Entity):

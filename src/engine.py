@@ -14,6 +14,7 @@ from tcod.map import compute_fov
 import exceptions
 from message_log import MessageLog
 import render_functions
+import tile_types
 
 if TYPE_CHECKING:
     from entity import Actor
@@ -55,7 +56,7 @@ class Engine:
         self.game_map.entities = set([self.player])
         # load in new set of entities based on what the player has done on this floor
 
-    def descend(self):
+    def descend(self, new_stairs=True, reposition=None):
         self.coming_from = -1
         # save
         self.save_dungeon()
@@ -63,15 +64,26 @@ class Engine:
         self.world_location = [self.world_location[0], self.world_location[1] + 1]
         # load or generate new
         if (self.world_location[0],self.world_location[1]) in self.explored_zones:
-            dungeon = self.load_dungeon()
+            self.load_dungeon()
         else:
             self.game_world.generate_floor()
+
         print("location: ", self.world_location)
+        
+        if reposition:
+            self.player.place(reposition[0], reposition[1], self.game_map)
 
         self.message_log.add_message(
             "You descend the staircase.", color.descend
         )
-    def ascend(self):
+
+        if (new_stairs and self.coming_from == -1 and (self.game_map.tiles[self.player.x, self.player.y]['stairs_up'] == False)):
+            self.message_log.add_message(
+                "You've unlocked a new ascending staircase on this level.", color.descend
+            )
+            self.game_map.tiles[self.player.x, self.player.y] = tile_types.up_stairs
+            
+    def ascend(self, new_stairs=True):
         self.coming_from = 1
         # save
         self.save_dungeon()
@@ -79,13 +91,20 @@ class Engine:
         self.world_location = [self.world_location[0], self.world_location[1] - 1]
         # load or generate new
         if (self.world_location[0],self.world_location[1]) in self.explored_zones:
-            dungeon = self.load_dungeon()
+            self.load_dungeon()
         else:
             self.game_world.generate_floor()
         print("location: ", self.world_location)
         self.message_log.add_message(
             "You ascend the staircase.", color.ascend
         )
+
+        if (new_stairs and self.coming_from == -1 and (self.game_map.tiles[self.player.x, self.player.y]['stairs_down'] == False)):
+            self.message_log.add_message(
+                "You've unlocked a new descending staircase on this level.", color.descend
+            )
+            self.game_map.tiles[self.player.x, self.player.y] = tile_types.down_stairs
+
 
     def handle_ai_turns(self) -> None:
         for entity in set(self.game_map.actors) - {self.player}:
@@ -127,6 +146,8 @@ class Engine:
         for actor in self.game_map.actors:
             if actor.fighter.light <= 0:
                 continue
+            if not self.game_map.in_bounds(actor.x, actor.y):
+                continue
             lighthere = compute_fov(
                 self.game_map.tiles["transparent"],
                 (actor.x, actor.y),
@@ -153,7 +174,7 @@ class Engine:
         render_functions.render_dungeon_level(
             console=console,
             dungeon_level=self.world_location[1],
-            location=(0, 45),
+            location=(0, 43),
         )
 
         render_functions.render_names_at_mouse_location(

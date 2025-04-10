@@ -106,8 +106,13 @@ class GameMap:
 
         return None
 
+    def get_tile_is_staircase_down_at_location(self, x: int, y: int) -> tile_types.tile_dt:
+        return self.tiles[x,y]["stairs_down"]
+    def get_tile_is_staircase_up_at_location(self, x: int, y: int) -> tile_types.tile_dt:
+        return self.tiles[x,y]["stairs_up"]
+
     def get_tile_at_location(self, x: int, y: int) -> tile_types.tile_dt:
-        return self.tiles["tileid"][x,y]
+        return self.tiles[x,y]["tileid"]
 
     def in_bounds(self, x: int, y: int) -> bool:
         """Return True if x and y are inside of the bounds of this map."""
@@ -200,10 +205,9 @@ class GameWorld:
         self.map_height = map_height
 
     def generate_floor(self) -> None:
-        from procgen import generate_dungeon
-
+        from procgen import generate_dungeon # this is an evil necessity for now to avoid circular imports...
         self.engine.game_map = generate_dungeon(
             map_width=self.map_width,
             map_height=self.map_height,
-            engine=self.engine,
+            engine=self.engine
         )

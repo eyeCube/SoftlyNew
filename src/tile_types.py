@@ -22,6 +22,8 @@ tile_dt = np.dtype(
         ("transparent", bool),  # True if this tile doesn't block FOV.
         ("not_obscuring", bool),  # False if this tile partially blocks FOV
         ("fall_through", bool),  
+        ("stairs_up", bool),  
+        ("stairs_down", bool),  
         ("light", graphic_dt),  # Graphics for when the tile is in FOV and lit up.
         ("obscured", graphic_dt),  # partially obscured, lighter than dark, darker than light
         ("dark", graphic_dt),  # not lit up but in view
@@ -37,6 +39,8 @@ def new_tile(
     transparent: bool,
     not_obscuring: bool,
     fall_through: bool,
+    stairs_up: bool,
+    stairs_down: bool,
     light: Tuple[int, Tuple[int, int, int], Tuple[int, int, int]],
     obscured: Tuple[int, Tuple[int, int, int], Tuple[int, int, int]],
     dark: Tuple[int, Tuple[int, int, int], Tuple[int, int, int]],
@@ -44,7 +48,7 @@ def new_tile(
 ) -> np.ndarray:
     """Helper function for defining individual tile types """
     return np.array(
-        (tileid, walkable, transparent, not_obscuring, fall_through, light, obscured, dark, deep),
+        (tileid, walkable, transparent, not_obscuring, fall_through, stairs_up, stairs_down, light, obscured, dark, deep),
         dtype=tile_dt)
 
 
@@ -64,10 +68,8 @@ SHROUD = np.array((ord(" "), (255, 255, 255), (0, 0, 0)), dtype=graphic_dt)
 # stairways/ chasms
 chasm = new_tile(
     tileid=CHASM,
-    walkable=False,
-    transparent=True,
-    not_obscuring=True,
-    fall_through=True,
+    walkable=False, transparent=True, not_obscuring=True,
+    fall_through=True, stairs_up=False, stairs_down=False,
     light=(181, color.deepgray, color.black),
     obscured=(181, color.deepgray, color.black),
     dark=(181, color.deepgray, color.black),
@@ -75,10 +77,8 @@ chasm = new_tile(
 )
 down_stairs = new_tile(
     tileid=DOWN_STAIRCASE,
-    walkable=True,
-    transparent=True,
-    not_obscuring=True,
-    fall_through=False,
+    walkable=True, transparent=True, not_obscuring=True,
+    fall_through=False, stairs_up=False, stairs_down=True,
     light=(ord(">")+256, color.black, color.magenta),
     obscured=(ord(">")+256, color.black, color.dkmagenta),
     dark=(ord(">")+256, color.black, color.dkmagenta),
@@ -86,10 +86,8 @@ down_stairs = new_tile(
 )
 up_stairs = new_tile(
     tileid=UP_STAIRCASE,
-    walkable=True,
-    transparent=False,
-    not_obscuring=True,
-    fall_through=False,
+    walkable=True, transparent=False, not_obscuring=True,
+    fall_through=False, stairs_up=True, stairs_down=False,
     light=(ord("<")+256, color.black, color.magenta),
     obscured=(ord("<")+256, color.black, color.dkmagenta),
     dark=(ord("<")+256, color.black, color.dkmagenta),
@@ -97,10 +95,8 @@ up_stairs = new_tile(
 )
 down_ladder = new_tile(
     tileid=DOWN_LADDER,
-    walkable=True,
-    transparent=True,
-    not_obscuring=True,
-    fall_through=False,
+    walkable=True, transparent=True, not_obscuring=True,
+    fall_through=False, stairs_up=False, stairs_down=True,
     light=(198, color.black, color.magenta),
     obscured=(198, color.black, color.dkmagenta),
     dark=(198, color.black, color.dkmagenta),
@@ -108,10 +104,8 @@ down_ladder = new_tile(
 )
 up_ladder = new_tile(
     tileid=UP_LADDER,
-    walkable=True,
-    transparent=False,
-    not_obscuring=True,
-    fall_through=False,
+    walkable=True, transparent=True, not_obscuring=True,
+    fall_through=False, stairs_up=True, stairs_down=False,
     light=(199, color.black, color.magenta),
     obscured=(199, color.black, color.dkmagenta),
     dark=(199, color.black, color.dkmagenta),
@@ -121,10 +115,8 @@ up_ladder = new_tile(
 # floors
 concrete_highway = new_tile(
     tileid=WHITE_FLOOR,
-    walkable=True,
-    transparent=True,
-    not_obscuring=True,
-    fall_through=False,
+    walkable=True, transparent=True, not_obscuring=True,
+    fall_through=False, stairs_up=False, stairs_down=False,
     light=(179, color.neutralgray, color.deepgray),
     obscured=(179, color.hazy, color.black),
     dark=(179, color.hazy, color.black),
@@ -132,10 +124,8 @@ concrete_highway = new_tile(
 )
 wood_floor = new_tile(
     tileid=WOOD_FLOOR,
-    walkable=True,
-    transparent=True,
-    not_obscuring=True,
-    fall_through=False,
+    walkable=True, transparent=True, not_obscuring=True,
+    fall_through=False, stairs_up=False, stairs_down=False,
     light=(207, color.deepgray, color.dkbrown),
     obscured=(207, color.hazy, color.black),
     dark=(207, color.hazy, color.black),
@@ -143,10 +133,8 @@ wood_floor = new_tile(
 )
 concrete_floor = new_tile(
     tileid=WHITE_FLOOR,
-    walkable=True,
-    transparent=True,
-    not_obscuring=True,
-    fall_through=False,
+    walkable=True, transparent=True, not_obscuring=True,
+    fall_through=False, stairs_up=False, stairs_down=False,
     light=(249, color.neutralgray, color.deepgray),
     obscured=(249, color.hazy, color.black),
     dark=(249, color.hazy, color.black),
@@ -154,10 +142,8 @@ concrete_floor = new_tile(
 )
 regal_floor = new_tile(
     tileid=WHITE_FLOOR, # update this
-    walkable=True,
-    transparent=True,
-    not_obscuring=True,
-    fall_through=False,
+    walkable=True, transparent=True, not_obscuring=True,
+    fall_through=False, stairs_up=False, stairs_down=False,
     light=(249, color.neutralgray, color.navy),
     obscured=(249, color.hazy, color.black),
     dark=(249, color.hazy, color.black),
@@ -165,10 +151,8 @@ regal_floor = new_tile(
 )
 brown_floor = new_tile(
     tileid=DIRTY_FLOOR,
-    walkable=True,
-    transparent=True,
-    not_obscuring=True,
-    fall_through=False,
+    walkable=True, transparent=True, not_obscuring=True,
+    fall_through=False, stairs_up=False, stairs_down=False,
     light=(249, color.neutral, color.deep),
     obscured=(290, color.mauve, color.deepmauve),
     dark=(290, color.mauve, color.deepmauve),
@@ -178,10 +162,8 @@ brown_floor = new_tile(
 # walls
 concrete_wall = new_tile(
     tileid=WHITE_WALL,
-    walkable=False,
-    transparent=False,
-    not_obscuring=False,
-    fall_through=False,
+    walkable=False, transparent=False, not_obscuring=False,
+    fall_through=False, stairs_up=False, stairs_down=False,
     light=(222, color.white, color.offwhite),
     obscured=(222, color.vdkgray, color.vdkgray),
     dark=(222, color.vdkgray, color.vdkgray),
@@ -189,10 +171,8 @@ concrete_wall = new_tile(
 )
 blue_wall = new_tile(
     tileid=WHITE_WALL,
-    walkable=False,
-    transparent=False,
-    not_obscuring=False,
-    fall_through=False,
+    walkable=False, transparent=False, not_obscuring=False,
+    fall_through=False, stairs_up=False, stairs_down=False,
     light=(221, color.offwhite, color.ltblue),
     obscured=(221, color.navy, color.navy),
     dark=(221, color.navy, color.navy),
@@ -200,10 +180,8 @@ blue_wall = new_tile(
 )
 wood_wall = new_tile(
     tileid=WOOD_WALL,
-    walkable=False,
-    transparent=False,
-    not_obscuring=False,
-    fall_through=False,
+    walkable=False, transparent=False, not_obscuring=False,
+    fall_through=False, stairs_up=False, stairs_down=False,
     light=(207, color.brown, color.dkbrown),
     obscured=(207, color.hazybrown, color.hazybrown),
     dark=(207, color.hazybrown, color.hazybrown),
@@ -211,10 +189,8 @@ wood_wall = new_tile(
 )
 brown_wall = new_tile(
     tileid=DIRTY_WALL,
-    walkable=False,
-    transparent=False,
-    not_obscuring=False,
-    fall_through=False,
+    walkable=False, transparent=False, not_obscuring=False,
+    fall_through=False, stairs_up=False, stairs_down=False,
     light=(290, color.bone, color.ltbrown),
     obscured=(290, color.hazy, color.hazy),
     dark=(290, color.hazy, color.hazy),
@@ -222,10 +198,8 @@ brown_wall = new_tile(
 )
 red_wall = new_tile(
     tileid=RUSTED_WALL,
-    walkable=False,
-    transparent=False,
-    not_obscuring=False,
-    fall_through=False,
+    walkable=False, transparent=False, not_obscuring=False,
+    fall_through=False, stairs_up=False, stairs_down=False,
     light=(205, color.rust, color.darkrust),
     obscured=(205, color.hazyred, color.hazyred),
     dark=(205, color.hazyred, color.hazyred),
